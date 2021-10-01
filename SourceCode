@@ -1,0 +1,133 @@
+#include "Servo.h"
+#include "SD.h"
+#define SD_ChipSelectPin 4
+#include "TMRpcm.h"
+#include "SPI.h"
+
+TMRpcm tmrpcm;
+Servo myservo;
+
+int Sensor = 7;
+const int trigPin = 2;
+const int echoPin = 3;
+
+int clap = 0;
+long detection_range_start = 0;
+long detection_range = 0;
+
+void setup() {
+Serial.begin(19200);
+myservo.attach(10);
+
+tmrpcm.speakerPin = 9;
+Serial.begin(19200);
+if (!SD.begin(SD_ChipSelectPin)) {
+Serial.println("SD fail");
+return;
+}
+
+tmrpcm.setVolume(5);   
+tmrpcm.play("2.wav");
+
+
+
+}
+void loop() {
+
+long duration, cm;
+
+pinMode(trigPin, OUTPUT);
+
+digitalWrite(trigPin, LOW);
+
+delayMicroseconds(2);
+
+digitalWrite(trigPin, HIGH);
+
+delayMicroseconds(20);
+
+digitalWrite(trigPin, LOW);
+
+pinMode(echoPin, INPUT);
+
+duration = pulseIn(echoPin, HIGH);
+
+// convert the time into a distance
+
+cm = microsecondsToCentimeters(duration);
+
+// the condition for the distance
+
+int k=1;
+
+int status_sensor = digitalRead(Sensor);
+if (status_sensor == 0)
+{ if (clap==3)
+{
+    exit(0);
+
+}
+
+  
+  if (clap == 0)
+  {
+    detection_range_start = detection_range = millis();
+    clap++;
+  }
+  else if (clap > 0 && millis()-detection_range >= 50)
+  {
+    detection_range = millis();
+    clap++;
+  }
+}
+if (millis()-detection_range_start >= 400)
+{
+  if (clap == 1)
+  {
+    if (tmrpcm.isPlaying())
+    {
+      tmrpcm.pause();
+    }
+    else if (!tmrpcm.isPlaying())
+    {
+      tmrpcm.pause();
+    }
+  }
+  else if (clap==2 || cm>40)
+  {
+    if (tmrpcm.isPlaying())
+    { 
+      tmrpcm.pause();
+      tmrpcm.play("3.wav");
+      k++;   
+    }
+    if (k==2)
+    {
+      tmrpcm.pause();
+      tmrpcm.play("4.wav");
+      k++;
+    }
+    else if (k==3)
+    {
+      tmrpcm.pause();
+      tmrpcm.play("5.wav");
+      k++;
+    }
+    else if (k==4)
+    {
+      tmrpcm.pause();
+      tmrpcm.play("Asd.wav");
+    }
+    
+  }
+    clap = 0;
+  }
+
+}
+
+
+long microsecondsToCentimeters(long microseconds) {
+
+return microseconds / 29 / 2;
+
+}
